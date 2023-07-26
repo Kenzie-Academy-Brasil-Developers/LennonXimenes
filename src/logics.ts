@@ -3,6 +3,7 @@ import market from "./database";
 import { Product } from "./interfaces";
 
 const read = (req: Request, res: Response): Response => {
+
     return res.status(200).json({ total: market.length, market });
 }
 
@@ -14,8 +15,8 @@ const retrieve = (req: Request, res: Response): Response => {
 
     if (!foundProd) {
         return res.status(404).json({ error: "Product not found." });
-
     }
+
     return res.status(200).json(foundProd);
 }
 
@@ -32,10 +33,26 @@ const create = (req: Request, res: Response): Response => {
     return res.status(201).json(newProduct);
 }
 
+const partialUpdate = (req: Request, res: Response): Response => {
+
+    const { marketIndex } = res.locals;
+
+    const updateProduct = (market[marketIndex] = {
+        ...market[marketIndex],
+        ...req.body
+    });
+
+    return res.status(200).json(updateProduct);
+}
+
 const destroy = (req: Request, res: Response): Response => {
-    
+
+    const { marketIndex } = res.locals;
+
+    market.splice(marketIndex, 1);
+
     return res.status(204).json();
 }
 
 
-export default { create, read, retrieve };
+export default { read, retrieve, create, partialUpdate, destroy };
