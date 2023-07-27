@@ -2,31 +2,39 @@ import { Request, Response } from "express";
 import market from "./database";
 import { Product } from "./interfaces";
 
-const read = (req: Request, res: Response): Response => {
+const getNextId = (): number => {
+    const lastProduct: Product | undefined = market.sort(
+        (a: Product, b: Product): number => a.id - b.id)
+        .at(-1);
 
-    return res.status(200).json({ total: market.length, market });
+    if (!lastProduct) return 1;
+
+    return lastProduct.id + 1;
+}
+
+const read = (req: Request, res: Response): Response => {
+    const amount: number = market.reduce(
+        (a: number, b: Product): number => a + b.price, 0)
+
+    return res.status(200).json({ total: amount, products: market });
 }
 
 const retrieve = (req: Request, res: Response): Response => {
 
-    const foundProd: Product | undefined = market.find(
-        (p: Product): boolean => p.id === Number(req.params.id)
-    );
+    const { foundProduct } = res.locals;
 
-    if (!foundProd) {
-        return res.status(404).json({ error: "Product not found." });
-    }
-
-    return res.status(200).json(foundProd);
+    return res.status(200).json(foundProduct);
 }
 
 const create = (req: Request, res: Response): Response => {
 
     const newProduct: Product = {
         ...req.body,
-        id: market.length + 1,
-        expirationDate: new Date(),
+        id: getNextId(),
+        expirationDate: new Date()
     };
+
+    newProduct.expirationDate.setFullYear(newProduct.expirationDate.getFullYear() + 1);
 
     market.push(newProduct);
 

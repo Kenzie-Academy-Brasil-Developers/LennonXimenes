@@ -2,7 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import market from "./database";
 import { Product } from "./interfaces";
 
-const idExists = (req: Request, res: Response, next: NextFunction) => {
+const requestLog = (req: Request, res: Response, next: NextFunction): void => {
+    console.log(`${req.method}: ${req.url}`);
+
+    return next();
+}
+
+const idExists = (req: Request, res: Response, next: NextFunction): void | Response => {
 
     const { id } = req.params;
     const marketIndex: number = market.findIndex(
@@ -13,12 +19,27 @@ const idExists = (req: Request, res: Response, next: NextFunction) => {
         return res.status(404).json({ message: "Product not found." });
     }
 
-    res.locals = {
-        ...res.locals,
-        marketIndex
-    };
-    
+    const foundProduct = market[marketIndex]
+
+    res.locals = { ...res.locals, marketIndex, foundProduct };
+
     return next();
 };
 
-export default { idExists };
+const nameExists = (req: Request, res: Response, next: NextFunction): void | Response => {
+
+    const { name } = req.body;
+
+    if (!name) return next();
+
+    const foundProductName: Product | undefined = market.find((p: Product): boolean => p.name === name);
+
+    if (foundProductName) {
+        return res.status(409).json({ message: "Product already registered." });
+    }
+
+    return next();
+}
+
+
+export default { requestLog, idExists, nameExists };
